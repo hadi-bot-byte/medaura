@@ -1,12 +1,5 @@
-# medaura
-Medaura is an app that helps patients track their medication schedule offline in order to ensure an easy management of their prescriptions safely.
-# Features
-works completely offline 
-SqLite_based medication sheduling tracking
-Prevents double dosing
-Local notifications( more of an alarm)
-# Technologies to be used
-Python
-SQLite
-APScheduler/ schedule
-Tkinter or plyer for notification
+# MEDAURA - A Cloud-Based Offline Medication Reminder System.
+> **Medaura** is a cloud based, offline-first medication reminder application that enables patients reliably track and manage their medication schedules even in areas with poor or no internet connectivity.
+> **Medaura's** system combines **distributed systems principles** and **cloud computing** to ensure a fault-tolerant, scalable, and acessible healthcare and availability solution for patients across the African continent.
+# Overview
+In the different regions across the African continent, millions of people depend on daily medication to manage chronic illnesses such as **diabetes**, **kidney disease**, **asthma**, **Heart disease**. However, a large portion of these patients struggle to maintain a consistent medication schedule due to forgetfulness, complex dose prescriptions and also a limited acess to healthcare support tools.
