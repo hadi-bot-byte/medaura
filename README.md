@@ -25,6 +25,6 @@ Many of the currently available medication reminder applications are either too 
 Internet outages and high data costs further limits the usability of cloud-only healthcare systems. As a result, patients in rural regions often cannot benefit from these digital health innovations.
 These above problems collectively contribute to **poor medication adherence**, **increased disease progression**, and **avoidable hospitalizations**; worsening public health outcomes and placing additional strain on already limited healthcare resources.
 ### Why this problem matters.
-Medication non-adherence is not merely an individual issue, it is a **health system inefficiency**. Studies show that in developing regions, **over 50% of patients fail to take their medications as prescribed**, leading to further health co;plications and costs.
+Medication non-adherence is not merely an individual issue, it is a **health system inefficiency**. Studies show that in developing regions, **over 50% of patients fail to take their medications as prescribed**, leading to further health complications and costs.
 This makes it essential to design a **context-aware**, **offline-capable**, and **user-friendly** solution that bridges the gap between technology and accessibility; a system tailored for Africa's connectivity and healthcare realities.
 That is where **Medaura** comes in: a distributed, offline-first medication reminder system that ensures **no patient is left behind** due to internet or infrastructure limitations.
