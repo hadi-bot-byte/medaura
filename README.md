@@ -370,3 +370,246 @@ Emergency alerts for missed doses
 Dashboard for hospitals
 
 Real-time syncing
+System Architecture
+
+Medaura is designed as a lightweight distributed system that uses the lecturer-provided StorageVirtualNode infrastructure as the backbone for data storage, synchronization, and communication. The system consists of three primary layers:
+
+1. Client Layer (Mobile App / Frontend)
+
+Responsible for:
+
+User registration & login
+
+Managing medication schedules locally
+
+Triggering offline alarms
+
+Syncing data with the nearest available node
+
+2. Distributed Storage Layer (Given by Lecturer)
+
+This layer is based on the provided components:
+
+StorageVirtualNode → Each node simulates a storage instance capable of:
+
+Storing patient profiles and medication schedules
+
+Managing storage capacity
+
+Handling chunk-based read/write operations
+
+Network Layer (Provided) → Manages message passing between nodes
+
+Node Registry → Tracks available nodes, node health, and connected clients
+
+Replication Manager → Ensures copies of patient schedules exist on at least 2 nodes
+
+3. Cloud Aggregation Layer (Optional but Included for Assignment)
+
+This component:
+
+Stores long-term backups of user profiles
+
+Collects analytics on medication adherence
+
+Provides global access to user data (if a patient moves to another region/node)
+
+How Medaura Uses Distributed System Principles
+1. Replication
+
+User medication schedules are stored redundantly on N = 3 nodes:
+
+Primary node
+
+Two secondary replicas
+
+This ensures:
+
+High availability
+
+Data recovery after node failure
+
+2. Fragmentation (Chunking)
+
+Using the lecturer’s chunk-based file storage API:
+
+Patient schedule files are broken into chunks (e.g., 1 KB each)
+
+Stored across nodes
+
+Updated and reconstructed using chunk metadata
+
+This makes the system scalable and fault-tolerant.
+
+3. Eventual Consistency
+
+When a user updates a medication schedule:
+
+The primary node updates immediately
+
+Replicas update asynchronously
+
+All nodes eventually converge to the latest version
+
+4. Node Communication
+
+Nodes use the lecturer’s simulated message-passing layer to:
+
+Check availability
+
+Send heartbeats
+
+Handle replication messages
+
+Transfer chunks between nodes
+
+5. Fault Tolerance
+
+If a node fails:
+
+The system detects a missing heartbeat
+
+A new replica is created on another healthy node
+
+Lost chunks are reconstructed from replicas
+
+Backend Workflow (Technical Explanation)
+1. User Creates or Updates a Medication Schedule
+
+Local app stores it offline immediately
+
+When online, the app sends the schedule JSON to the nearest node
+
+2. Node Stores Schedule
+
+StorageVirtualNode splits it into chunks
+
+Each chunk is stored with metadata (chunk ID, offset, owner, timestamp)
+
+3. Node Replication
+
+The node sends the file chunks to 2 other nodes.
+
+4. Cloud Sync (Optional)
+
+A compressed version of the schedule is uploaded to the cloud for backup.
+
+5. Alarm Engine (Runs on Device Offline)
+
+The schedule is stored in a local SQLite or local JSON file
+
+A background service checks due times every minute
+
+Rings alarm even when:
+
+No internet
+
+Device is locked
+
+Node is unreachable
+
+Node Design (Based on Lecturer’s Base)
+
+Each distributed node implements:
+
+Storage Management → total capacity, used capacity, free space
+
+Chunking Engine → read/write data in chunks
+
+File Transfer Module → push/pull chunks to/from other nodes
+
+Networking Module → message passing, heartbeats
+
+Replication Controller → ensures redundancy rules (N=3)
+
+Utilization Metrics → network usage, CPU, memory (simulated)
+
+You can explicitly mention that you reused the lecturer’s StorageVirtualNode class and extended it with:
+
+ReplicaList
+
+HeartbeatManager
+
+FailureDetector
+
+API Endpoints (if using a simple backend)
+
+Example endpoints you can include in your README:
+
+Endpoint	Method	Description
+/register	POST	Register new user
+/login	POST	Authenticate user
+/schedule/upload	POST	Upload medication schedule
+/schedule/sync	GET	Retrieve schedule from nearest node
+/nodes/heartbeat	GET	Node health check
+Why Medaura Qualifies as a Distributed System
+
+Multiple autonomous nodes store and manage data.
+
+Data replication ensures fault tolerance.
+
+Chunk-based storage spreads files across nodes.
+
+Node communication uses distributed message passing.
+
+Eventual consistency ensures synchronization across all replicas.
+
+Failure detection + recovery keep the system reliable.
+
+Local-first design ensures offline availability but still uses distributed cloud storage for sync.
+
+This fits exactly into distributed systems fundamentals your lecturer expects.
+
+System Requirements
+
+Node.js / Python backend
+
+React Native / Flutter frontend
+
+Distributed node simulator (provided by lecturer)
+
+Local storage engine (SQLite, AsyncStorage, MMKV, etc.)
+
+Cloud storage (Firebase, Supabase, or a simple REST API)
+
+How to Run Medaura Locally
+1. Start Distributed Nodes
+python node_manager.py
+
+2. Start Backend API
+npm start
+# or
+python3 backend.py
+
+3. Start the Mobile App
+npm run android
+
+Future Enhancements
+
+SMS reminders for users without smartphones
+
+Node-to-node gossip protocol for faster sync
+
+Blockchain-based prescription storage
+
+Predictive adherence monitoring using AI
+
+Multi-region replication
+
+Conclusion
+
+Medaura is more than a medication reminder app — it is a fully distributed system that applies:
+
+replication
+
+chunking
+
+node communication
+
+fault tolerance
+
+local-first design
+
+consistency models
+
+…exactly as your lecturer requires.
