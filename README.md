@@ -580,36 +580,21 @@ python node_manager.py
 npm start
 # or
 python3 backend.py
-
-3. Start the Mobile App
+# 3. Start the Mobile App
 npm run android
-
 Future Enhancements
-
 SMS reminders for users without smartphones
-
 Node-to-node gossip protocol for faster sync
-
 Blockchain-based prescription storage
-
 Predictive adherence monitoring using AI
-
 Multi-region replication
 
-Conclusion
-
+## Conclusion
 Medaura is more than a medication reminder app — it is a fully distributed system that applies:
-
 replication
-
 chunking
-
 node communication
-
 fault tolerance
-
 local-first design
-
 consistency models
 
-…exactly as your lecturer requires.
