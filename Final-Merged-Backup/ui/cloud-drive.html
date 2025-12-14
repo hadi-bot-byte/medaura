@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudDrive - Distributed Storage System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial; background: #f8fafc; }
+        
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 350px;
+        }
+        .login-box h2 { margin-bottom: 30px; color: #333; text-align: center; }
+        .login-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .login-btn { width: 100%; background: #4285f4; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .login-btn:hover { background: #3367d6; }
+        
+        /* Main Dashboard - Hidden Initially */
+        .dashboard { display: none; }
+        
+        /* Top Navbar */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .logo { color: #4285f4; font-size: 24px; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .search-bar { flex: 1; max-width: 600px; margin: 0 30px; }
+        .search-bar input { width: 100%; padding: 10px 20px; border: 1px solid #ddd; border-radius: 20px; }
+        .user-menu { display: flex; align-items: center; gap: 20px; }
+        .user-avatar { width: 40px; height: 40px; background: #4285f4; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+            min-height: calc(100vh - 70px);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .sidebar-section { margin-bottom: 30px; }
+        .sidebar h3 { color: #666; margin-bottom: 15px; font-size: 14px; text-transform: uppercase; }
+        .sidebar-item {
+            padding: 12px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #475569;
+        }
+        .sidebar-item:hover { background: #f1f5f9; }
+        .sidebar-item.active { background: #e0f2fe; color: #0369a1; font-weight: 500; }
+        
+        /* Node Status */
+        .node-status {
+            background: #0f172a;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        .node-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .node-online { color: #10b981; font-weight: bold; }
+        .node-offline { color: #ef4444; }
+        
+        /* File Browser */
+        .file-browser {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .toolbar-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #475569;
+            font-weight: 500;
+        }
+        .toolbar-btn:hover { background: #e2e8f0; }
+        .toolbar-btn.primary { background: #4285f4; color: white; }
+        .toolbar-btn.primary:hover { background: #3367d6; }
+        
+        /* File Grid */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 25px;
+        }
+        .file-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            border-color: #3b82f6;
+        }
+        .file-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: #e0f2fe;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #0369a1;
+        }
+        .file-name { 
+            font-weight: 500; 
+            margin-bottom: 8px; 
+            color: #1e293b;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .file-size { color: #64748b; font-size: 13px; }
+        .file-date { color: #94a3b8; font-size: 12px; margin-top: 5px; }
+        
+        /* Right Panel - Calculator & Stats */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .stats-card, .calculator-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .stats-card h3, .calculator-card h3 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .storage-info { margin: 15px 0; }
+        .storage-bar {
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .storage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Calculator */
+        .calc-inputs {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 10px;
+            margin: 20px 0;
+            align-items: center;
+        }
+        .calc-inputs input, .calc-inputs select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .calc-operator {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #475569;
+        }
+        .calc-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .calc-btn:hover { background: #059669; }
+        .calc-result {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 20px;
+            color: #065f46;
+            border: 2px solid #a7f3d0;
+        }
+        
+        /* Upload Button */
+        .upload-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #4285f4;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(66, 133, 244, 0.3);
+            border: none;
+        }
+        .upload-btn:hover { 
+            background: #3367d6; 
+            transform: scale(1.1);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container { grid-template-columns: 200px 1fr; }
+            .right-panel { display: none; }
+        }
+        @media (max-width: 768px) {
+            .main-container { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .navbar .search-bar { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h2>🔐 CloudDrive Login</h2>
+            <input type="text" class="login-input" id="username" placeholder="Username" value="admin">
+            <input type="password" class="login-input" id="password" placeholder="Password" value="admin123">
+            <button class="login-btn" onclick="login()">Login to CloudDrive</button>
+            <div style="text-align: center; margin-top: 15px; color: #666; font-size: 14px;">
+                <p>Demo: admin / admin123</p>
+                <p>Distributed Storage System with Calculator gRPC</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <!-- Top Navbar -->
+        <nav class="navbar">
+            <div class="logo">
+                <span style="font-size: 28px;">☁️</span>
+                CloudDrive
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="Search files...">
+            </div>
+            <div class="user-menu">
+                <div style="text-align: right;">
+                    <div style="font-weight: 500;">Administrator</div>
+                    <div style="font-size: 12px; color: #666;">admin@clouddrive.local</div>
+                </div>
+                <div class="user-avatar">A</div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-container">
+            <!-- Left Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Storage</h3>
+                    <div class="sidebar-item active">
+                        <span>📁</span> My Files
+                    </div>
+                    <div class="sidebar-item">
+                        <span>⭐</span> Starred
+                    </div>
+                    <div class="sidebar-item">
+                        <span>🕒</span> Recent
+                    </div>
+                    <div class="sidebar-item">
+                        <span>🗑️</span> Trash
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>System</h3>
+                    <div class="sidebar-item">
+                        <span>📊</span> Analytics
+                    </div>
+                    <div class="sidebar-item">
+                        <span>⚙️</span> Settings
+                    </div>
+                    <div class="sidebar-item">
+                        <span>👥</span> Users
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Node Status</h3>
+                    <div class="node-status">
+                        <div class="node-item">
+                            <span>node1</span>
+                            <span class="node-online">● Online</span>
+                        </div>
+                        <div class="node-item">
+                            <span>node2</span>
+                            <span class="node-online">● Online</span>
+                        </div>
+                        <div class="node-item">
+                            <span>node3</span>
+                            <span class="node-online">● Online</span>
+                        </div>
+                        <div class="node-item">
+                            <span>node4</span>
+                            <span class="node-online">● Online</span>
+                        </div>
+                        <div class="node-item">
+                            <span>node5</span>
+                            <span class="node-online">● Online</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Browser -->
+            <div class="file-browser">
+                <div class="toolbar">
+                    <button class="toolbar-btn primary" onclick="uploadFile()">
+                        <span>📤</span> Upload File
+                    </button>
+                    <button class="toolbar-btn" onclick="createFolder()">
+                        <span>📁</span> New Folder
+                    </button>
+                    <button class="toolbar-btn" onclick="refreshFiles()">
+                        <span>🔄</span> Refresh
+                    </button>
+                    <button class="toolbar-btn" onclick="distributeFiles()">
+                        <span>🌐</span> Distribute
+                    </button>
+                </div>
+
+                <h3 style="color: #1e293b; margin-bottom: 20px;">My Files (Distributed across 5 nodes)</h3>
+                
+                <div class="file-grid" id="fileGrid">
+                    <!-- Files will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="right-panel">
+                <!-- Storage Stats -->
+                <div class="stats-card">
+                    <h3>💾 Storage Overview</h3>
+                    <div class="storage-info">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Used: 2.4 GB</span>
+                            <span>Free: 7.6 GB</span>
+                        </div>
+                        <div class="storage-bar">
+                            <div class="storage-fill" style="width: 24%"></div>
+                        </div>
+                        <div style="text-align: center; color: #64748b; font-size: 14px; margin-top: 10px;">
+                            Total: 10 GB • 5 nodes
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                            <span>Documents</span>
+                            <span>1.2 GB</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                            <span>Images</span>
+                            <span>800 MB</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                            <span>Videos</span>
+                            <span>400 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculator -->
+                <div class="calculator-card">
+                    <h3>🧮 Calculator gRPC</h3>
+                    <div class="calc-inputs">
+                        <input type="number" id="calcNum1" value="633">
+                        <div class="calc-operator" id="opSymbol">+</div>
+                        <input type="number" id="calcNum2" value="27">
+                    </div>
+                    <select id="calcOperator" onchange="updateOperator()" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                        <option value="add">Addition (+)</option>
+                        <option value="sub">Subtraction (-)</option>
+                        <option value="mul">Multiplication (×)</option>
+                        <option value="div">Division (÷)</option>
+                        <option value="mod">Modulo (%)</option>
+                    </select>
+                    <button class="calc-btn" onclick="calculate()">Calculate via gRPC</button>
+                    <div class="calc-result" id="calcResult">Ready to calculate</div>
+                </div>
+
+                <!-- System Info -->
+                <div class="stats-card">
+                    <h3>⚙️ System Info</h3>
+                    <div style="margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
+                            <span>Storage Nodes</span>
+                            <span style="font-weight: bold;">5 Active</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
+                            <span>Replication</span>
+                            <span style="font-weight: bold;">3x Copies</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
+                            <span>gRPC Service</span>
+                            <span style="color: #10b981; font-weight: bold;">● Online</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0; padding: 8px 0;">
+                            <span>Network</span>
+                            <span style="font-weight: bold;">1 Gbps</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Upload Button -->
+        <button class="upload-btn" onclick="uploadFile()" title="Upload File">
+            +
+        </button>
+    </div>
+
+    <script>
+        // Sample files data
+        const sampleFiles = [
+            { name: 'Project Report.pdf', size: '2.4 MB', date: 'Today', icon: '📄', type: 'pdf' },
+            { name: 'Vacation Photos', size: '156 MB', date: '2 days ago', icon: '📷', type: 'folder' },
+            { name: 'System Design.pptx', size: '18.2 MB', date: '3 days ago', icon: '📊', type: 'ppt' },
+            { name: 'Database Backup.sql', size: '845 MB', date: '1 week ago', icon: '💾', type: 'db' },
+            { name: 'Meeting Recording.mp4', size: '320 MB', date: '2 weeks ago', icon: '🎥', type: 'video' },
+            { name: 'Source Code', size: '48 MB', date: '3 weeks ago', icon: '📁', type: 'folder' },
+            { name: 'Financial Data.xlsx', size: '8.7 MB', date: '1 month ago', icon: '📈', type: 'excel' },
+            { name: 'Configuration Files', size: '12 KB', date: '1 month ago', icon: '⚙️', type: 'folder' }
+        ];
+
+        // Login function
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username && password) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                loadFiles();
+                showNotification('Login successful! Welcome to CloudDrive.');
+            } else {
+                alert('Please enter username and password');
+            }
+        }
+
+        // Load files into grid
+        function loadFiles() {
+            const fileGrid = document.getElementById('fileGrid');
+            fileGrid.innerHTML = '';
+            
+            sampleFiles.forEach(file => {
+                const fileCard = document.createElement('div');
+                fileCard.className = 'file-card';
+                fileCard.innerHTML = `
+                    <div class="file-icon">${file.icon}</div>
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${file.size}</div>
+                    <div class="file-date">${file.date}</div>
+                `;
+                fileCard.onclick = () => openFile(file);
+                fileGrid.appendChild(fileCard);
+            });
+        }
+
+        // File operations
+        function uploadFile() {
+            const fileName = prompt('Enter file name:', 'NewFile.pdf');
+            if (fileName) {
+                const newFile = {
+                    name: fileName,
+                    size: Math.round(Math.random() * 1000) + ' KB',
+                    date: 'Just now',
+                    icon: '📄',
+                    type: 'file'
+                };
+                sampleFiles.unshift(newFile);
+                loadFiles();
+                showNotification(`File "${fileName}" uploaded and distributed across 5 nodes.`);
+            }
+        }
+
+        function createFolder() {
+            const folderName = prompt('Enter folder name:', 'New Folder');
+            if (folderName) {
+                const newFolder = {
+                    name: folderName,
+                    size: '--',
+                    date: 'Just now',
+                    icon: '📁',
+                    type: 'folder'
+                };
+                sampleFiles.unshift(newFolder);
+                loadFiles();
+                showNotification(`Folder "${folderName}" created.`);
+            }
+        }
+
+        function refreshFiles() {
+            loadFiles();
+            showNotification('Files refreshed from distributed storage.');
+        }
+
+        function distributeFiles() {
+            showNotification('Files redistributed across storage nodes for optimal performance.');
+        }
+
+        function openFile(file) {
+            alert(`Opening: ${file.name}\nSize: ${file.size}\nDate: ${file.date}\n\nThis file is distributed across multiple storage nodes for high availability.`);
+        }
+
+        // Calculator functions
+        function updateOperator() {
+            const op = document.getElementById('calcOperator').value;
+            const symbols = { add: '+', sub: '-', mul: '×', div: '÷', mod: '%' };
+            document.getElementById('opSymbol').textContent = symbols[op] || '+';
+        }
+
+        function calculate() {
+            const num1 = parseInt(document.getElementById('calcNum1').value) || 0;
+            const num2 = parseInt(document.getElementById('calcNum2').value) || 1;
+            const op = document.getElementById('calcOperator').value;
+            
+            // Simulate gRPC call
+            let result;
+            switch(op) {
+                case 'add': result = num1 + num2; break;
+                case 'sub': result = num1 - num2; break;
+                case 'mul': result = num1 * num2; break;
+                case 'div': result = Math.floor(num1 / num2); break;
+                case 'mod': result = num1 % num2; break;
+            }
+            
+            document.getElementById('calcResult').innerHTML = `
+                <div>${num1} ${document.getElementById('opSymbol').textContent} ${num2} =</div>
+                <div style="font-size: 28px; margin-top: 5px;">${result}</div>
+                <div style="font-size: 12px; margin-top: 10px; color: #047857;">
+                    ✓ Calculated via gRPC service
+                </div>
+            `;
+            
+            showNotification(`Calculation completed: ${result}`);
+        }
+
+        // Utility functions
+        function showNotification(message) {
+            // Create notification
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #10b981;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize
+        updateOperator();
+    </script>
+</body>
+</html>

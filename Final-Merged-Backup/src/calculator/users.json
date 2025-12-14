@@ -1,0 +1,25 @@
+{
+  "user@example.com": {
+    "user_id": "19b21df5-413e-4c1b-b584-2903ad2700c3",
+    "email": "user@example.com",
+    "password_hash": "3afeed04eeca02f36260571b19deb0898adfabcf3d0283aacdc9cafb81e0b0e1",
+    "full_name": "John Doe",
+    "company": "CloudTech Inc.",
+    "timplanner_code": "TIMPLAN2025",
+    "registered_at": "2025-12-08T00:29:13.294497",
+    "enrolled": true,
+    "login_attempts": 0,
+    "last_login": "2025-12-08T00:29:13.296980",
+    "subscription_plan": "premium",
+    "storage_quota": "1GB",
+    "accepted_terms": true,
+    "newsletter_opt_in": true,
+    "enrolled_at": "2025-12-08T00:29:13.296247",
+    "enrollment_data": {
+      "subscription_plan": "premium",
+      "storage_quota": "1GB",
+      "accepted_terms": true,
+      "newsletter_opt_in": true
+    }
+  }
+}

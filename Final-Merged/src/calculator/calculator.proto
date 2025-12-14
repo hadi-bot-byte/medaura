@@ -1,0 +1,26 @@
+// generate the skeleton and stub classes
+// generate calculator_pb2.py and calculator_pb2_grpc.py.
+// python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. calculator.proto
+
+syntax = "proto3";
+
+package cloud;
+
+service Calculator {
+  rpc Add (OperationRequest) returns (OperationResponse);
+  rpc Sub (OperationRequest) returns (OperationResponse);
+  rpc Mul (OperationRequest) returns (OperationResponse);
+  rpc Div (OperationRequest) returns (OperationResponse);
+  rpc Mod (OperationRequest) returns (OperationResponse);
+}
+
+// CHANGED: Generic name that works for all operations
+message OperationRequest {
+  int32 num1 = 1;
+  int32 num2 = 2;
+}
+
+// CHANGED: Generic name that works for all operations
+message OperationResponse {
+  int32 result = 1;
+}

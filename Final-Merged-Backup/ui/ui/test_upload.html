@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cloud Drive Test</title>
+</head>
+<body>
+    <h1>Cloud Drive Test Page</h1>
+    
+    <h2>1. Test API Connection</h2>
+    <button onclick="testAPI()">Test API</button>
+    <div id="apiResult"></div>
+    
+    <h2>2. Upload File</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+    <div id="uploadResult"></div>
+    
+    <h2>3. List Files</h2>
+    <button onclick="listFiles()">List Files</button>
+    <div id="fileList"></div>
+    
+    <script>
+        const API_URL = 'http://localhost:5001';
+        
+        async function testAPI() {
+            try {
+                const response = await fetch(`${API_URL}/api/health`);
+                const data = await response.json();
+                document.getElementById('apiResult').innerHTML = 
+                    `<p style="color:green">✅ API is working!</p>
+                     <pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('apiResult').innerHTML = 
+                    `<p style="color:red">❌ API Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files[0]) {
+                alert('Please select a file first');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const response = await fetch(`${API_URL}/api/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                document.getElementById('uploadResult').innerHTML = 
+                    `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                
+                listFiles();
+            } catch (error) {
+                document.getElementById('uploadResult').innerHTML = 
+                    `<p style="color:red">❌ Upload error: ${error.message}</p>`;
+            }
+        }
+        
+        async function listFiles() {
+            try {
+                const response = await fetch(`${API_URL}/api/files`);
+                const files = await response.json();
+                
+                let html = `<p>Total files: ${files.length}</p>`;
+                if (files.length > 0) {
+                    html += '<ul>';
+                    files.forEach(file => {
+                        html += `<li>${file.name} - ${file.size_formatted}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                
+                document.getElementById('fileList').innerHTML = html;
+            } catch (error) {
+                document.getElementById('fileList').innerHTML = 
+                    `<p style="color:red">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

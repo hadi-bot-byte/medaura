@@ -1,0 +1,29 @@
+{
+  "storage_limits": {
+    "max_storage_per_user": "1GB",
+    "max_file_size": "100MB",
+    "allowed_file_types": [".txt", ".pdf", ".jpg", ".png", ".py", ".proto", ".json"],
+    "max_files_per_user": 1000,
+    "quota_warning_threshold": "80%"
+  },
+  "calculator_service": {
+    "max_operations_per_minute": 100,
+    "max_concurrent_connections": 50,
+    "log_retention_days": 30,
+    "grpc_port": 50051,
+    "grpc_host": "127.0.0.1"
+  },
+  "authentication": {
+    "session_timeout_minutes": 60,
+    "max_login_attempts": 5,
+    "password_min_length": 8,
+    "require_email_verification": false,
+    "timplanner_integration": true
+  },
+  "web_interface": {
+    "port": 5000,
+    "host": "127.0.0.1",
+    "debug": true,
+    "secret_key": "cloudgRPC-secret-key-2025"
+  }
+}
