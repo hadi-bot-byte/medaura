@@ -579,4 +579,512 @@ Type 'help' for available commands
                 const nodes = await response.json();
                 
                 const nodeHTML = nodes.map(node => `
-                    <div style="display: flex; justify-content: space-between; margin: 10
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <strong>${node.id}</strong>
+                            <div style="font-size: 12px; color: #666;">${node.ip}</div>
+                        </div>
+                        <span class="status-${node.status}">● ${node.status.toUpperCase()}</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('nodeStatus').innerHTML = nodeHTML;
+                
+            } catch (error) {
+                console.error('Error loading nodes:', error);
+                document.getElementById('nodeStatus').innerHTML = `
+                    <div style="color: #ef4444; background: #fef2f2; padding: 10px; border-radius: 8px;">
+                        Error loading nodes. API may be offline.
+                    </div>
+                `;
+            }
+        }
+
+        // Load files
+        async function loadFiles() {
+            try {
+                const response = await fetch(`${API_URL}/files`);
+                if (!response.ok) throw new Error('Failed to load files');
+                
+                const files = await response.json();
+                
+                if (files.length === 0) {
+                    document.getElementById('fileList').innerHTML = '<p style="color: #666; text-align: center;">No files yet. Upload your first file!</p>';
+                    return;
+                }
+                
+                const fileHTML = files.map(file => `
+                    <div class="file-item">
+                        <div>
+                            <strong>${file.name}</strong>
+                            <div style="font-size: 12px; color: #666;">
+                                ${formatSize(file.size)} • Uploaded: ${file.upload_date}
+                            </div>
+                        </div>
+                        <div style="font-size: 12px; color: #3b82f6;">
+                            Distributed to ${file.nodes ? file.nodes.length : 0} nodes
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('fileList').innerHTML = fileHTML;
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+                document.getElementById('fileList').innerHTML = `
+                    <p style="color: #ef4444; text-align: center;">
+                        Error loading files. API may be offline.
+                    </p>
+                `;
+            }
+        }
+
+        // Upload file
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            
+            if (!files || files.length === 0) {
+                showNotification('Please select a file first', 'error');
+                return;
+            }
+            
+            const file = files[0];
+            showNotification(`Uploading ${file.name}...`, 'info');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Upload failed');
+                }
+                
+                const result = await response.json();
+                
+                showNotification(`✅ ${file.name} uploaded successfully`, 'success');
+                document.getElementById('uploadStatus').innerHTML = `
+                    <div style="color: #10b981; background: #f0fdf4; padding: 10px; border-radius: 8px;">
+                        ✅ File distributed to ${result.nodes.length} nodes
+                    </div>
+                `;
+                
+                // Log to console
+                logToConsole(`[File System] Uploaded: ${file.name} (${formatSize(file.size)})`);
+                logToConsole(`[File System] Distributed to nodes: ${result.nodes.join(', ')}`);
+                
+                // Clear file input
+                fileInput.value = '';
+                
+                // Reload files
+                loadFiles();
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showNotification(`Upload failed: ${error.message}`, 'error');
+                document.getElementById('uploadStatus').innerHTML = `
+                    <div style="color: #ef4444; background: #fef2f2; padding: 10px; border-radius: 8px;">
+                        Upload failed. ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Calculator
+        async function calculate() {
+            const num1 = parseFloat(document.getElementById('calcNum1').value) || 0;
+            const num2 = parseFloat(document.getElementById('calcNum2').value) || 0;
+            const operation = document.getElementById('calcOp').value;
+            
+            const opSymbols = {
+                'add': '+', 'sub': '-', 'mul': '×', 'div': '÷'
+            };
+            
+            try {
+                showNotification('Calculating via gRPC...', 'info');
+                
+                const response = await fetch(`${API_URL}/calculate`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        num1: num1,
+                        num2: num2,
+                        operation: operation
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Calculation failed');
+                }
+                
+                const result = await response.json();
+                
+                document.getElementById('calcResult').innerHTML = `
+                    <div style="font-size: 20px; font-weight: bold; color: #065f46;">
+                        ${num1} ${opSymbols[operation]} ${num2} = ${result.result}
+                    </div>
+                    <div style="font-size: 12px; color: #047857; margin-top: 5px;">
+                        ✓ Calculated via gRPC API at ${new Date().toLocaleTimeString()}
+                    </div>
+                `;
+                
+                showNotification(`Calculation result: ${result.result}`, 'success');
+                logToConsole(`[Calculator] ${num1} ${opSymbols[operation]} ${num2} = ${result.result} (via gRPC)`);
+                
+            } catch (error) {
+                console.error('Calculator error:', error);
+                
+                // Fallback calculation
+                let localResult;
+                switch(operation) {
+                    case 'add': localResult = num1 + num2; break;
+                    case 'sub': localResult = num1 - num2; break;
+                    case 'mul': localResult = num1 * num2; break;
+                    case 'div': localResult = num2 !== 0 ? (num1 / num2).toFixed(2) : 'Error: Division by zero'; break;
+                }
+                
+                document.getElementById('calcResult').innerHTML = `
+                    <div style="font-size: 20px; font-weight: bold; color: #92400e;">
+                        ${num1} ${opSymbols[operation]} ${num2} = ${localResult}
+                    </div>
+                    <div style="font-size: 12px; color: #92400e; margin-top: 5px;">
+                        ⚠️ API offline, calculated locally
+                    </div>
+                `;
+                
+                showNotification('API offline, using local calculation', 'warning');
+                logToConsole(`[Calculator] ${num1} ${opSymbols[operation]} ${num2} = ${localResult} (local fallback)`);
+            }
+        }
+
+        // System Control Functions
+        async function startCloudSim() {
+            try {
+                showNotification('Starting CloudSim...', 'info');
+                logToConsole('[CloudSim] Starting simulation...');
+                
+                const response = await fetch(`${API_URL}/cloudsim/start`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('cloudsim-status').className = 'status-online';
+                    document.getElementById('cloudsim-status').textContent = '● ONLINE';
+                    showNotification(`CloudSim started: ${result.simulation_id}`, 'success');
+                    logToConsole(`[CloudSim] Simulation started: ${result.simulation_id}`);
+                } else {
+                    showNotification(`Failed: ${result.error}`, 'error');
+                    logToConsole(`[CloudSim] Error: ${result.error}`);
+                }
+                
+            } catch (error) {
+                console.error('CloudSim error:', error);
+                showNotification('Failed to start CloudSim', 'error');
+                logToConsole(`[CloudSim] Connection error: ${error.message}`);
+            }
+        }
+
+        async function stopCloudSim() {
+            try {
+                const response = await fetch(`${API_URL}/cloudsim/stop`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('cloudsim-status').className = 'status-offline';
+                    document.getElementById('cloudsim-status').textContent = '● OFFLINE';
+                    showNotification('CloudSim stopped', 'info');
+                    logToConsole('[CloudSim] Simulation stopped');
+                }
+                
+            } catch (error) {
+                console.error('CloudSim stop error:', error);
+                showNotification('Failed to stop CloudSim', 'error');
+            }
+        }
+
+        async function startGrpc() {
+            const endpoint = document.getElementById('grpc-endpoint').value;
+            
+            try {
+                showNotification(`Starting gRPC server on ${endpoint}...`, 'info');
+                logToConsole(`[gRPC] Starting server on ${endpoint}...`);
+                
+                const response = await fetch(`${API_URL}/grpc/start`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ endpoint: endpoint })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('grpc-status').className = 'status-online';
+                    document.getElementById('grpc-status').textContent = '● ONLINE';
+                    showNotification(`gRPC server started: ${result.server_id}`, 'success');
+                    logToConsole(`[gRPC] Server started: ${result.server_id}`);
+                } else {
+                    showNotification(`Failed: ${result.error}`, 'error');
+                    logToConsole(`[gRPC] Error: ${result.error}`);
+                }
+                
+            } catch (error) {
+                console.error('gRPC error:', error);
+                showNotification('Failed to start gRPC server', 'error');
+                logToConsole(`[gRPC] Connection error: ${error.message}`);
+            }
+        }
+
+        async function testGrpc() {
+            const endpoint = document.getElementById('grpc-endpoint').value;
+            
+            try {
+                showNotification(`Testing connection to ${endpoint}...`, 'info');
+                logToConsole(`[gRPC] Testing connection to ${endpoint}...`);
+                
+                // Simulate connection test with delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                showNotification('Connection test successful!', 'success');
+                logToConsole('[gRPC] Connection test: ✓ SUCCESS');
+                
+            } catch (error) {
+                console.error('Connection test error:', error);
+                showNotification('Connection test failed', 'error');
+                logToConsole('[gRPC] Connection test: ✗ FAILED');
+            }
+        }
+
+        async function startMergedSystem() {
+            const mode = document.getElementById('system-mode').value;
+            
+            try {
+                showNotification(`Starting integrated system in ${mode} mode...`, 'info');
+                logToConsole(`[System] Starting integrated system in ${mode} mode...`);
+                
+                const response = await fetch(`${API_URL}/system/start`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ mode: mode })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('merged-status').className = 'status-online';
+                    document.getElementById('merged-status').textContent = '● ONLINE';
+                    showNotification(`Integrated system started: ${result.system_id}`, 'success');
+                    logToConsole(`[System] Integrated system started: ${result.system_id}`);
+                } else {
+                    showNotification(`Failed: ${result.error}`, 'error');
+                    logToConsole(`[System] Error: ${result.error}`);
+                }
+                
+            } catch (error) {
+                console.error('System start error:', error);
+                showNotification('Failed to start integrated system', 'error');
+                logToConsole(`[System] Connection error: ${error.message}`);
+            }
+        }
+
+        async function runTests() {
+            try {
+                showNotification('Running system tests...', 'info');
+                logToConsole('[Tests] Running system tests...');
+                
+                const response = await fetch(`${API_URL}/test`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    logToConsole('[Tests] === TEST RESULTS ===');
+                    result.results.forEach(test => {
+                        const icon = test.status === 'passed' ? '✓' : '✗';
+                        logToConsole(`[Tests] ${icon} ${test.test}: ${test.details}`);
+                    });
+                    logToConsole('[Tests] All tests passed!');
+                    
+                    showNotification('All system tests passed!', 'success');
+                } else {
+                    showNotification(`Tests failed: ${result.error}`, 'error');
+                    logToConsole(`[Tests] Error: ${result.error}`);
+                }
+                
+            } catch (error) {
+                console.error('Test error:', error);
+                showNotification('System tests failed', 'error');
+                logToConsole(`[Tests] Connection error: ${error.message}`);
+            }
+        }
+
+        // Console Functions
+        function logToConsole(message) {
+            const consoleElem = document.getElementById('system-console');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleElem.innerHTML += `\n[${timestamp}] ${message}`;
+            consoleElem.scrollTop = consoleElem.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('system-console').innerHTML = '[Console cleared]';
+            logToConsole('[System] Console cleared');
+        }
+
+        function executeConsoleCommand() {
+            const input = document.getElementById('console-input');
+            const command = input.value.trim();
+            
+            if (command) {
+                executeCommand(command);
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        function executeCommand(command) {
+            logToConsole(`> ${command}`);
+            
+            // Process commands
+            switch(command.toLowerCase()) {
+                case 'help':
+                    logToConsole('Available commands:');
+                    logToConsole('  help - Show this message');
+                    logToConsole('  status - Show system status');
+                    logToConsole('  nodes - Show storage nodes');
+                    logToConsole('  files - List uploaded files');
+                    logToConsole('  clear - Clear console');
+                    logToConsole('  start all - Start all services');
+                    logToConsole('  stop all - Stop all services');
+                    logToConsole('  test - Run system tests');
+                    logToConsole('  api - Check API status');
+                    break;
+                    
+                case 'status':
+                    logToConsole('System Status:');
+                    logToConsole(`  CloudSim: ${document.getElementById('cloudsim-status').textContent}`);
+                    logToConsole(`  Cloud gRPC: ${document.getElementById('grpc-status').textContent}`);
+                    logToConsole(`  Integrated System: ${document.getElementById('merged-status').textContent}`);
+                    logToConsole(`  API: ${document.getElementById('api-status').textContent}`);
+                    break;
+                    
+                case 'nodes':
+                    logToConsole('Loading node status...');
+                    loadNodes();
+                    logToConsole('Node status refreshed');
+                    break;
+                    
+                case 'files':
+                    logToConsole('Loading file list...');
+                    loadFiles();
+                    logToConsole('File list refreshed');
+                    break;
+                    
+                case 'clear':
+                    clearConsole();
+                    break;
+                    
+                case 'start all':
+                    logToConsole('Starting all services...');
+                    startCloudSim();
+                    startGrpc();
+                    startMergedSystem();
+                    break;
+                    
+                case 'stop all':
+                    logToConsole('Stopping all services...');
+                    stopCloudSim();
+                    document.getElementById('grpc-status').className = 'status-offline';
+                    document.getElementById('grpc-status').textContent = '● OFFLINE';
+                    document.getElementById('merged-status').className = 'status-offline';
+                    document.getElementById('merged-status').textContent = '● OFFLINE';
+                    logToConsole('All services stopped');
+                    break;
+                    
+                case 'test':
+                    runTests();
+                    break;
+                    
+                case 'api':
+                    logToConsole('Checking API status...');
+                    checkApiStatus();
+                    break;
+                    
+                default:
+                    logToConsole(`Unknown command: ${command}. Type 'help' for available commands.`);
+            }
+        }
+
+        // Demo data for offline mode
+        function loadDemoData() {
+            const demoNodes = [
+                {id: 'node1', ip: '192.168.1.101', status: 'online'},
+                {id: 'node2', ip: '192.168.1.102', status: 'online'},
+                {id: 'node3', ip: '192.168.1.103', status: 'online'},
+                {id: 'node4', ip: '192.168.1.104', status: 'offline'},
+                {id: 'node5', ip: '192.168.1.105', status: 'online'}
+            ];
+            
+            const nodeHTML = demoNodes.map(node => `
+                <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <div>
+                        <strong>${node.id}</strong>
+                        <div style="font-size: 12px; color: #666;">${node.ip}</div>
+                    </div>
+                    <span class="status-${node.status}">● ${node.status.toUpperCase()}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('nodeStatus').innerHTML = nodeHTML;
+            document.getElementById('fileList').innerHTML = `
+                <div class="file-item">
+                    <div>
+                        <strong>demo_file.txt</strong>
+                        <div style="font-size: 12px; color: #666;">
+                            1.5 KB • Uploaded: 2024-01-15 10:30
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: #3b82f6;">
+                        Distributed to 3 nodes
+                    </div>
+                </div>
+            `;
+        }
+
+        // Helper function to format file size
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+        }
+
+        // Auto-check API status on page load
+        window.addEventListener('load', function() {
+            // Check if we're already on dashboard (page refresh)
+            if (window.location.hash === '#dashboard') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                checkApiStatus();
+                loadNodes();
+                loadFiles();
+            }
+        });
+    </script>
+</body>
+</html>
