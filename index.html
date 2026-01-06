@@ -355,11 +355,44 @@
                 </div>
             </div>
             
-            <!-- System Status -->
+            <!-- System Status with Storage Tracking -->
             <div class="card">
                 <h2>⚙️ System Status</h2>
                 
-                <h3>Storage Nodes:</h3>
+                <!-- Storage Summary - SIMPLIFIED: ONLY TOTAL STORAGE -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0; color: white;">📊 Storage Overview</h3>
+                    
+                    <!-- Simple Storage Info -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 36px; font-weight: bold;">1 GB</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Total Capacity</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 36px; font-weight: bold; color: #10b981;" id="storage-available">1 GB</div>
+                            <div style="font-size: 12px; opacity: 0.9;">Available</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                            <span>Used: <strong id="storage-used">0 MB</strong></span>
+                            <span><strong id="storage-percentage">0%</strong></span>
+                            <span>Free: <strong id="storage-free">1024 MB</strong></span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); height: 12px; border-radius: 6px; overflow: hidden;">
+                            <div id="storage-progress" style="height: 100%; background: #10b981; width: 0%; transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="loadStorageInfo()" style="margin-top: 10px; width: 100%; padding: 10px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">
+                        🔄 Refresh Storage
+                    </button>
+                </div>
+                
+                <h3>Storage Nodes Status:</h3>
                 <div id="nodeStatus">
                     Loading node status...
                 </div>
@@ -479,6 +512,8 @@ Type 'help' for available commands
     <script>
         // API Configuration
         const API_URL = 'http://localhost:5001/api';
+        const TOTAL_STORAGE_GB = 1; // 1 GB total
+        const TOTAL_STORAGE_MB = 1024; // 1 GB in MB
         
         // Show notification
         function showNotification(message, type = 'info') {
@@ -524,6 +559,61 @@ Type 'help' for available commands
             }
         }
 
+        // Load storage information - SIMPLIFIED FOR 1GB TOTAL
+        async function loadStorageInfo() {
+            try {
+                const response = await fetch(`${API_URL}/storage`);
+                if (!response.ok) throw new Error('Failed to load storage info');
+                
+                const storage = await response.json();
+                
+                // For 1GB total system, calculate percentages
+                const totalUsedMB = storage.total_used;
+                const freeMB = TOTAL_STORAGE_MB - totalUsedMB;
+                const percentage = ((totalUsedMB / TOTAL_STORAGE_MB) * 100).toFixed(1);
+                
+                // Update display - show in MB for accuracy
+                document.getElementById('storage-used').textContent = `${totalUsedMB.toFixed(0)} MB`;
+                document.getElementById('storage-free').textContent = `${freeMB.toFixed(0)} MB`;
+                document.getElementById('storage-available').textContent = `${freeMB > 1024 ? (freeMB/1024).toFixed(1) + ' GB' : freeMB.toFixed(0) + ' MB'}`;
+                document.getElementById('storage-percentage').textContent = `${percentage}%`;
+                document.getElementById('storage-progress').style.width = `${percentage}%`;
+                
+                // Color the progress bar based on usage
+                const progressBar = document.getElementById('storage-progress');
+                if (percentage > 90) {
+                    progressBar.style.background = '#ef4444';
+                } else if (percentage > 70) {
+                    progressBar.style.background = '#f59e0b';
+                } else {
+                    progressBar.style.background = '#10b981';
+                }
+                
+                // Update node status (simple version - no storage bars)
+                const nodeHTML = storage.nodes.map(node => `
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <strong>${node.id}</strong>
+                            <div style="font-size: 12px; color: #666;">${node.ip}</div>
+                        </div>
+                        <span class="status-${node.status}">● ${node.status.toUpperCase()}</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('nodeStatus').innerHTML = nodeHTML;
+                
+                showNotification('Storage info updated', 'success');
+                
+            } catch (error) {
+                console.error('Error loading storage info:', error);
+                document.getElementById('nodeStatus').innerHTML = `
+                    <div style="color: #ef4444; background: #fef2f2; padding: 10px; border-radius: 8px;">
+                        Error loading storage info. API may be offline.
+                    </div>
+                `;
+            }
+        }
+
         // Login function
         async function login() {
             const username = document.getElementById('username').value;
@@ -547,7 +637,7 @@ Type 'help' for available commands
                     showNotification('Connected to distributed storage system!', 'success');
                     
                     // Load initial data
-                    loadNodes();
+                    loadStorageInfo();
                     loadFiles();
                     
                     // Log to console
@@ -570,36 +660,6 @@ Type 'help' for available commands
             }
         }
 
-        // Load storage nodes
-        async function loadNodes() {
-            try {
-                const response = await fetch(`${API_URL}/nodes`);
-                if (!response.ok) throw new Error('Failed to load nodes');
-                
-                const nodes = await response.json();
-                
-                const nodeHTML = nodes.map(node => `
-                    <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-                        <div>
-                            <strong>${node.id}</strong>
-                            <div style="font-size: 12px; color: #666;">${node.ip}</div>
-                        </div>
-                        <span class="status-${node.status}">● ${node.status.toUpperCase()}</span>
-                    </div>
-                `).join('');
-                
-                document.getElementById('nodeStatus').innerHTML = nodeHTML;
-                
-            } catch (error) {
-                console.error('Error loading nodes:', error);
-                document.getElementById('nodeStatus').innerHTML = `
-                    <div style="color: #ef4444; background: #fef2f2; padding: 10px; border-radius: 8px;">
-                        Error loading nodes. API may be offline.
-                    </div>
-                `;
-            }
-        }
-
         // Load files
         async function loadFiles() {
             try {
@@ -615,14 +675,24 @@ Type 'help' for available commands
                 
                 const fileHTML = files.map(file => `
                     <div class="file-item">
-                        <div>
+                        <div style="flex: 1;">
                             <strong>${file.name}</strong>
                             <div style="font-size: 12px; color: #666;">
                                 ${formatSize(file.size)} • Uploaded: ${file.upload_date}
                             </div>
+                            <div style="font-size: 11px; color: #3b82f6; margin-top: 3px;">
+                                Distributed to ${file.nodes ? file.nodes.length : 0} nodes
+                            </div>
                         </div>
-                        <div style="font-size: 12px; color: #3b82f6;">
-                            Distributed to ${file.nodes ? file.nodes.length : 0} nodes
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="event.stopPropagation(); downloadFile('${file.id}', '${file.name}')" 
+                                    style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                Download
+                            </button>
+                            <button onclick="event.stopPropagation(); deleteFile('${file.id}', '${file.name}')" 
+                                    style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                Delete
+                            </button>
                         </div>
                     </div>
                 `).join('');
@@ -650,7 +720,16 @@ Type 'help' for available commands
             }
             
             const file = files[0];
-            showNotification(`Uploading ${file.name}...`, 'info');
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            
+            // Check if file would exceed 1GB limit
+            const currentUsed = parseFloat(document.getElementById('storage-used').textContent) || 0;
+            if (currentUsed + parseFloat(fileSizeMB) > TOTAL_STORAGE_MB) {
+                showNotification(`Error: File too large! Only ${TOTAL_STORAGE_MB - currentUsed} MB available`, 'error');
+                return;
+            }
+            
+            showNotification(`Uploading ${file.name} (${fileSizeMB} MB)...`, 'info');
             
             const formData = new FormData();
             formData.append('file', file);
@@ -668,22 +747,31 @@ Type 'help' for available commands
                 
                 const result = await response.json();
                 
-                showNotification(`✅ ${file.name} uploaded successfully`, 'success');
+                showNotification(`✅ ${file.name} uploaded (${fileSizeMB} MB)`, 'success');
+                
+                // Update storage display with new info
+                const newUsed = result.storage_used || (currentUsed + parseFloat(fileSizeMB));
+                const newAvailable = TOTAL_STORAGE_MB - newUsed;
+                const percentage = ((newUsed / TOTAL_STORAGE_MB) * 100).toFixed(1);
+                
                 document.getElementById('uploadStatus').innerHTML = `
                     <div style="color: #10b981; background: #f0fdf4; padding: 10px; border-radius: 8px;">
-                        ✅ File distributed to ${result.nodes.length} nodes
+                        ✅ File distributed to ${result.nodes.length} nodes<br>
+                        Storage used: ${newUsed.toFixed(0)} MB (${percentage}%)<br>
+                        Storage available: ${newAvailable.toFixed(0)} MB
                     </div>
                 `;
                 
                 // Log to console
-                logToConsole(`[File System] Uploaded: ${file.name} (${formatSize(file.size)})`);
-                logToConsole(`[File System] Distributed to nodes: ${result.nodes.join(', ')}`);
+                logToConsole(`[File System] Uploaded: ${file.name} (${fileSizeMB} MB)`);
+                logToConsole(`[Storage] Used: ${newUsed.toFixed(0)} MB, Available: ${newAvailable.toFixed(0)} MB`);
                 
                 // Clear file input
                 fileInput.value = '';
                 
-                // Reload files
+                // Reload files and storage info
                 loadFiles();
+                loadStorageInfo();
                 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -693,6 +781,49 @@ Type 'help' for available commands
                         Upload failed. ${error.message}
                     </div>
                 `;
+            }
+        }
+
+        // Delete file function
+        async function deleteFile(fileId, fileName) {
+            if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/delete/${fileId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification(`✅ File "${fileName}" deleted`, 'success');
+                    logToConsole(`[File System] Deleted: ${fileName}`);
+                    logToConsole(`[Storage] Freed: ${result.freed_storage_mb.toFixed(2)} MB`);
+                    
+                    // Reload files and storage info
+                    loadFiles();
+                    loadStorageInfo();
+                } else {
+                    showNotification(`Delete failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Delete error:', error);
+                showNotification('Delete failed', 'error');
+            }
+        }
+
+        // Download file function
+        async function downloadFile(fileId, fileName) {
+            try {
+                window.open(`${API_URL}/download/${fileId}`, '_blank');
+                showNotification(`Downloading ${fileName}...`, 'info');
+                logToConsole(`[File System] Downloading: ${fileName}`);
+            } catch (error) {
+                console.error('Download error:', error);
+                showNotification('Download failed', 'error');
             }
         }
 
@@ -968,6 +1099,7 @@ Type 'help' for available commands
                     logToConsole('  status - Show system status');
                     logToConsole('  nodes - Show storage nodes');
                     logToConsole('  files - List uploaded files');
+                    logToConsole('  storage - Show storage info');
                     logToConsole('  clear - Clear console');
                     logToConsole('  start all - Start all services');
                     logToConsole('  stop all - Stop all services');
@@ -981,11 +1113,13 @@ Type 'help' for available commands
                     logToConsole(`  Cloud gRPC: ${document.getElementById('grpc-status').textContent}`);
                     logToConsole(`  Integrated System: ${document.getElementById('merged-status').textContent}`);
                     logToConsole(`  API: ${document.getElementById('api-status').textContent}`);
+                    logToConsole(`  Storage Used: ${document.getElementById('storage-used').textContent}`);
+                    logToConsole(`  Storage Free: ${document.getElementById('storage-free').textContent}`);
                     break;
                     
                 case 'nodes':
                     logToConsole('Loading node status...');
-                    loadNodes();
+                    loadStorageInfo();
                     logToConsole('Node status refreshed');
                     break;
                     
@@ -993,6 +1127,12 @@ Type 'help' for available commands
                     logToConsole('Loading file list...');
                     loadFiles();
                     logToConsole('File list refreshed');
+                    break;
+                    
+                case 'storage':
+                    logToConsole('Loading storage info...');
+                    loadStorageInfo();
+                    logToConsole('Storage info refreshed');
                     break;
                     
                 case 'clear':
@@ -1040,6 +1180,17 @@ Type 'help' for available commands
                 {id: 'node5', ip: '192.168.1.105', status: 'online'}
             ];
             
+            // Update storage display with demo data
+            const totalUsed = 256; // 256 MB used for demo
+            const freeMB = TOTAL_STORAGE_MB - totalUsed;
+            const percentage = (totalUsed / TOTAL_STORAGE_MB * 100).toFixed(1);
+            
+            document.getElementById('storage-used').textContent = '256 MB';
+            document.getElementById('storage-free').textContent = '768 MB';
+            document.getElementById('storage-available').textContent = '768 MB';
+            document.getElementById('storage-percentage').textContent = `${percentage}%`;
+            document.getElementById('storage-progress').style.width = `${percentage}%`;
+            
             const nodeHTML = demoNodes.map(node => `
                 <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 8px;">
                     <div>
@@ -1081,7 +1232,7 @@ Type 'help' for available commands
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
                 checkApiStatus();
-                loadNodes();
+                loadStorageInfo();
                 loadFiles();
             }
         });
