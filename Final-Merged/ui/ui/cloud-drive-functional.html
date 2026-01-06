@@ -26,8 +26,130 @@
 
     <!-- Main Dashboard -->
     <div class="dashboard" id="dashboard">
-        <!-- [Keep all HTML structure from previous version] -->
-        <!-- ... Same beautiful HTML ... -->
+        <!-- Header -->
+        <header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="margin: 0; font-size: 24px;">☁️ CloudDrive</h1>
+                <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">Distributed Storage System</p>
+            </div>
+            <button onclick="logout()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 20px; border-radius: 20px; cursor: pointer;">
+                Logout
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <div style="display: grid; grid-template-columns: 250px 1fr; min-height: calc(100vh - 80px);">
+            <!-- Sidebar -->
+            <div style="background: #f8fafc; padding: 25px; border-right: 1px solid #e2e8f0;">
+                <div style="margin-bottom: 30px;">
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">MAIN MENU</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <button class="menu-btn active" onclick="showSection('storage')">
+                            📦 Storage
+                        </button>
+                        <button class="menu-btn" onclick="showSection('calculator')">
+                            🧮 Calculator
+                        </button>
+                        <button class="menu-btn" onclick="showSection('upload')">
+                            📤 Upload
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Storage Stats -->
+                <div style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                    <div style="font-size: 14px; color: #64748b; margin-bottom: 10px;">Storage Overview</div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
+                        <span>Used: 3.2 GB</span>
+                        <span>32%</span>
+                    </div>
+                    <div style="background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden;">
+                        <div style="width: 32%; height: 100%; background: #10b981;"></div>
+                    </div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 5px;">9.8 GB free of 13 GB</div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div>
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">QUICK ACTIONS</div>
+                    <button onclick="showUploadModal()" style="width: 100%; padding: 10px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 8px;">
+                        📤 Upload File
+                    </button>
+                    <button onclick="refreshFiles()" style="width: 100%; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div style="padding: 30px; background: #f1f5f9;">
+                <!-- Storage Section (Default) -->
+                <div id="storageSection">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2 style="margin: 0; color: #1e293b;">📁 My Storage</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" placeholder="Search files..." style="padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; width: 250px;">
+                            <button onclick="showUploadModal()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                + New File
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- File Grid -->
+                    <div id="fileGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+                        <!-- Files will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Calculator Section -->
+                <div id="calculatorSection" style="display: none;">
+                    <h2 style="margin: 0 0 25px 0; color: #1e293b;">🧮 Distributed Calculator</h2>
+                    <div style="background: white; padding: 30px; border-radius: 15px; border: 1px solid #e2e8f0; max-width: 500px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <input type="number" id="calcNum1" value="10" style="flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                            <select id="calcOperator" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                                <option value="add">+ Add</option>
+                                <option value="sub">- Subtract</option>
+                                <option value="mul">× Multiply</option>
+                                <option value="div">÷ Divide</option>
+                                <option value="mod">% Modulo</option>
+                            </select>
+                            <input type="number" id="calcNum2" value="5" style="flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                        </div>
+                        <button onclick="calculate()" style="width: 100%; padding: 15px; background: #8b5cf6; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-bottom: 25px;">
+                            ⚡ Calculate (API)
+                        </button>
+                        <div id="calcResult" style="text-align: center; padding: 25px; background: #f8fafc; border-radius: 10px; border: 1px dashed #cbd5e1; font-size: 20px; color: #475569;">
+                            Result will appear here
+                        </div>
+                        <div style="margin-top: 20px; font-size: 14px; color: #64748b; text-align: center;">
+                            <p>This calculator uses the distributed API backend for calculations</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div id="uploadSection" style="display: none;">
+                    <h2 style="margin: 0 0 25px 0; color: #1e293b;">📤 Upload Files</h2>
+                    <div style="background: white; padding: 40px; border-radius: 15px; border: 2px dashed #cbd5e1; text-align: center;">
+                        <div style="font-size: 72px; margin-bottom: 20px;">📁</div>
+                        <h3 style="margin: 0 0 10px 0;">Drag & drop files here</h3>
+                        <p style="color: #64748b; margin-bottom: 25px;">or click the button below to select files</p>
+                        <button onclick="showUploadModal()" style="padding: 15px 40px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer;">
+                            Browse Files
+                        </button>
+                        <div style="margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 10px;">
+                            <h4 style="margin: 0 0 10px 0;">How distribution works:</h4>
+                            <div style="display: flex; justify-content: center; gap: 20px; font-size: 14px; color: #475569;">
+                                <div>1. File is split into chunks</div>
+                                <div>2. Chunks distributed to nodes</div>
+                                <div>3. Replicated for redundancy</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- File Upload Modal -->
@@ -68,7 +190,6 @@
                 if (data.success) {
                     document.getElementById('loginScreen').style.display = 'none';
                     document.getElementById('dashboard').style.display = 'block';
-                    loadNodes();
                     loadFiles();
                     showNotification('Login successful! Connected to distributed storage.');
                 } else {
@@ -77,26 +198,6 @@
             } catch (error) {
                 alert('Cannot connect to server. Make sure api.py is running on port 5001');
                 console.error('Login error:', error);
-            }
-        }
-
-        // Load storage nodes
-        async function loadNodes() {
-            try {
-                const response = await fetch(`${API_URL}/nodes`);
-                const nodes = await response.json();
-                
-                const nodeStatus = document.querySelector('.node-status');
-                if (nodeStatus) {
-                    nodeStatus.innerHTML = nodes.map(node => `
-                        <div class="node-item">
-                            <span>${node.id}</span>
-                            <span class="node-${node.status}">● ${node.status}</span>
-                        </div>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading nodes:', error);
             }
         }
 
@@ -145,6 +246,21 @@
                 console.error('Error loading files:', error);
                 showNotification('Error loading files. Make sure backend is running.');
             }
+        }
+
+        // Section navigation
+        function showSection(section) {
+            document.getElementById('storageSection').style.display = 'none';
+            document.getElementById('calculatorSection').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'none';
+            
+            document.getElementById(section + 'Section').style.display = 'block';
+            
+            // Update menu buttons
+            document.querySelectorAll('.menu-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
         }
 
         // File upload functions
@@ -245,6 +361,19 @@
             showNotification('File preview would open here');
         }
 
+        // Refresh files
+        function refreshFiles() {
+            loadFiles();
+            showNotification('Files refreshed');
+        }
+
+        // Logout function
+        function logout() {
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+            showNotification('Logged out successfully');
+        }
+
         // Calculator with real API
         async function calculate() {
             const num1 = parseInt(document.getElementById('calcNum1').value) || 0;
@@ -343,8 +472,54 @@
                 from { transform: translateX(0); opacity: 1; }
                 to { transform: translateX(100%); opacity: 0; }
             }
-            .node-online { color: #10b981; font-weight: bold; }
-            .node-offline { color: #ef4444; font-weight: bold; }
+            .menu-btn {
+                padding: 12px 15px;
+                background: transparent;
+                border: none;
+                border-radius: 8px;
+                text-align: left;
+                cursor: pointer;
+                color: #475569;
+                transition: all 0.2s;
+            }
+            .menu-btn:hover {
+                background: #f1f5f9;
+            }
+            .menu-btn.active {
+                background: #3b82f6;
+                color: white;
+            }
+            .file-card {
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                border: 1px solid #e2e8f0;
+                text-align: center;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .file-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            }
+            .file-icon {
+                font-size: 40px;
+                margin-bottom: 10px;
+            }
+            .file-name {
+                font-weight: 600;
+                margin-bottom: 5px;
+                color: #1e293b;
+            }
+            .file-size {
+                font-size: 12px;
+                color: #64748b;
+                margin-bottom: 3px;
+            }
+            .file-date {
+                font-size: 11px;
+                color: #94a3b8;
+            }
         `;
         document.head.appendChild(style);
     </script>
